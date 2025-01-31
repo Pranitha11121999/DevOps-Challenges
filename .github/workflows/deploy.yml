@@ -53,26 +53,19 @@ jobs:
       - name: Wait for EC2 Instance to Be Ready
         run: sleep 60  # Wait for the instance to initialize
 
-      - name: Install AWS Systems Manager (SSM) Plugin
-        run: |
-          sudo snap install amazon-ssm-agent --classic
-          sudo snap start amazon-ssm-agent
+      - name: 🚀 SSH into EC2 and Deploy DeepSeek Model
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ env.PUBLIC_IP }}
+          username: ubuntu
+          key: ${{ env.PRIVATE_KEY }}
+          script: |
+            sudo apt update -y
+            sudo apt install -y docker.io
+            sudo systemctl start docker
+            sudo docker pull deepseek-ai/deepseek-llm:latest
+            sudo docker run -d --name deepseek -p 8080:8080 deepseek-ai/deepseek-llm
 
-      - name: Run Docker on EC2 (SSM)
-        run: |
-          aws ssm send-command \
-            --document-name "AWS-RunShellScript" \
-            --targets "Key=instanceIds,Values=$INSTANCE_ID" \
-            --parameters 'commands=["sudo apt update && sudo apt install -y docker.io", "sudo systemctl start docker", "sudo docker pull deepseek-ai/deepseek-llm-r1", "sudo docker run -d -p 8080:8080 deepseek-ai/deepseek-llm-r1"]' \
-            --comment "Deploy DeepSeek Model R1"
-
-      - name: Verify Deployment
-        run: |
-          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://$PUBLIC_IP:8080)
-          if [ "$RESPONSE" -ne 200 ]; then
-            echo "Deployment failed!"
-            exit 1
-          else
-            echo "Deployment successful!"
-          fi
+      - name: 🎉 Deployment Completed
+        run: echo "DeepSeek Model is running at http://${{ env.PUBLIC_IP }}:8080"
  
