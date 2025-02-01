@@ -30,11 +30,25 @@ jobs:
         with:
           terraform_version: 1.5.7  # Use the required Terraform version
 
+      - name: Clean up existing resources
+        run: |
+          aws s3 rb s3://deepseek-model-bucket-12345 --force || true
+          aws ec2 delete-security-group --group-name deepseek_sg || true
+          aws iam delete-role --role-name ec2-iam-role || true
+          aws iam delete-policy --policy-arn arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:policy/ec2-access-policy || true
+
       - name: Terraform Init
         run: |
           cd terraform-project
           terraform init
 
+      - name: Import existing resources into Terraform
+        run: |
+          terraform import aws_s3_bucket.model_bucket deepseek-model-bucket-12345 || true
+          terraform import aws_security_group.deepseek_sg sg-<security-group-id> || true
+          terraform import aws_iam_role.ec2_role ec2-iam-role || true
+          terraform import aws_iam_policy.ec2_policy arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:policy/ec2-access-policy || true
+          
       - name: Terraform Plan
         run: |
           cd terraform-project

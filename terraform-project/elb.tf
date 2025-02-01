@@ -12,6 +12,10 @@ resource "aws_lb_target_group" "deepseek_target_group" {
   port     = 8080
   protocol = "HTTP"
   vpc_id   = data.aws_vpc.default.id
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_lb_listener" "deepseek_listener" {
