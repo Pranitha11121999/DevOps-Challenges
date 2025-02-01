@@ -37,27 +37,25 @@ jobs:
           aws iam delete-role --role-name ec2-iam-role || true
           aws iam delete-policy --policy-arn arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:policy/ec2-access-policy || true
 
-      - name: Terraform Init
-        run: |
-          cd terraform-project
-          terraform init
-
+      - name: Navigate to Terraform directory
+        working-directory: ./terraform-project
+        run: terraform init
+  
       - name: Import existing resources into Terraform
+        working-directory: ./terraform-project
         run: |
           terraform import aws_s3_bucket.model_bucket deepseek-model-bucket-12345 || true
-          terraform import aws_security_group.deepseek_sg sg-<security-group-id> || true
+          terraform import aws_security_group.deepseek_sg sg-009ee2f6e99545648  || true
           terraform import aws_iam_role.ec2_role ec2-iam-role || true
           terraform import aws_iam_policy.ec2_policy arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:policy/ec2-access-policy || true
           
       - name: Terraform Plan
-        run: |
-          cd terraform-project
-          terraform plan
+        working-directory: ./terraform-project
+        run: terraform plan
 
       - name: Terraform Apply
-        run: |
-          cd terraform-project
-          terraform apply -auto-approve
+        working-directory: ./terraform-project
+        run: terraform apply -auto-approve
 
       - name: Retrieve EC2 Public IP
         id: get-ec2-ip
